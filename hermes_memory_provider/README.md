@@ -11,6 +11,7 @@ When deployed, Mnemosyne gets the **same integration tier** as Honcho, mem0, and
 - **Post-turn sync** — User and assistant messages automatically stored to episodic memory
 - **Tool dispatch** — named tool surface: full 40 / slim 21 / none 12 (library default `full`)
 - **CLI commands** — `hermes mnemosyne {stats|sleep|version|inspect|clear|export|import}`
+- **Stow routing** — `stow_route.py` (no extra tool): inspect-then-update to canonical / working / existing `AGENTS.md` / todos. Skill: `stow`.
 - **Setup wizard** — Listed in `hermes memory setup`
 
 **All of this without touching Hermes core.** Deployed purely through the plugin directory.
