@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from hermes_memory_provider import DEFAULT_PREFETCH_CHAR_LIMIT, prefetch_omit_footer
+from hermes_memory_provider import DEFAULT_PREFETCH_CHAR_LIMIT
 from hermes_memory_provider.scripts.tool_schema_tax import inventory
 from hermes_memory_provider.tool_sets import schemas_for_mode
 
@@ -47,7 +47,7 @@ def test_prefetch_synthetic_p95_is_under_limit_plus_footer():
     gate = _load_extract_gate()
     p95, cap = gate.synthetic_prefetch_p95()
     assert p95 <= cap
-    assert cap >= DEFAULT_PREFETCH_CHAR_LIMIT + len(prefetch_omit_footer(1))
+    assert cap == DEFAULT_PREFETCH_CHAR_LIMIT
 
 
 def test_extract_gate_script_json_has_ship_ok():

@@ -9,7 +9,7 @@ When deployed, Mnemosyne gets the **same integration tier** as Honcho, mem0, and
 - **System prompt injection** — `# Mnemosyne Memory` header in every prompt
 - **Pre-turn prefetch** — Relevant memories injected via `<memory-context>` fence before each API call
 - **Post-turn sync** — User and assistant messages automatically stored to episodic memory
-- **Tool dispatch** — named tool surface: full 40 / slim 21 / none 14 (library default `full`)
+- **Tool dispatch** — named tool surface: full 40 / slim 21 / none 12 (library default `full`)
 - **CLI commands** — `hermes mnemosyne {stats|sleep|version|inspect|clear|export|import}`
 - **Setup wizard** — Listed in `hermes memory setup`
 
@@ -52,7 +52,7 @@ Interactive turns and sleep-time writes are split so the live model does not pay
 |------|------:|------|
 | `full` | 40 | Library default. Upstream-safe; every advertised schema. |
 | `slim` | 21 | Everyday reads plus remember / update / forget (and the rest of the slim write set). |
-| `none` | 14 | Read-only. |
+| `none` | 12 | Read-only. No remember / update / forget, and no diagnose / diagnostics (those can mutate). |
 
 Slim is opt-in: `hermes config set memory.mnemosyne.interactive_writes slim`, then restart Hermes. The library default remains `full`. Do not flip the mode mid-session — that invalidates the cached tool-schema prefix.
 
@@ -113,7 +113,7 @@ User plugins take precedence over bundled plugins on name collision.
 
 ## Tools (everyday slim 21)
 
-Library default is **full** (40 schemas). Everyday auto-injected surface is **slim 21**; `none` is read-only (**14**). The table is that slim 21.
+Library default is **full** (40 schemas). Everyday auto-injected surface is **slim 21**; `none` is read-only (**12**). The table is that slim 21.
 
 | Tool | Purpose |
 |------|---------|

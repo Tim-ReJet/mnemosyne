@@ -21,6 +21,8 @@ def test_none_is_read_only():
     names = {s["name"] for s in schemas_for_mode("none")}
     assert "mnemosyne_remember" not in names
     assert "mnemosyne_recall" in names
+    assert "mnemosyne_diagnose" not in names
+    assert "mnemosyne_recall_diagnostics" not in names
 
 
 def test_full_superset_of_slim():
@@ -144,6 +146,8 @@ def test_explicit_none_has_recall_no_remember(tmp_path):
     names = _schema_names(provider)
     assert "mnemosyne_recall" in names
     assert "mnemosyne_remember" not in names
+    assert "mnemosyne_diagnose" not in names
+    assert "mnemosyne_recall_diagnostics" not in names
 
 
 def test_explicit_slim_has_remember_no_export_or_graph_link(tmp_path):

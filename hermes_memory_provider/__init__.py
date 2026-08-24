@@ -218,8 +218,9 @@ def apply_prefetch_char_budget(hits, limit: int = DEFAULT_PREFETCH_CHAR_LIMIT, *
 
     Later hits that do not fit are omitted and replaced with a footer that
     points the model at ``mnemosyne_recall``. The first non-empty hit is always
-    kept (identity-first) and hard-sliced when it exceeds ``limit``. Invalid
-    or non-positive limits fall back to 3000.
+    kept (identity-first) and hard-sliced when it exceeds ``limit``. The omit
+    footer is reserved inside ``limit`` so the returned block never exceeds
+    the cap. Invalid or non-positive limits fall back to 3000.
     """
     parts = [h for h in hits if h]
     if not parts:
@@ -248,7 +249,11 @@ def apply_prefetch_char_budget(hits, limit: int = DEFAULT_PREFETCH_CHAR_LIMIT, *
         omitted += 1
     text = joiner.join(kept)
     if omitted:
-        text += "\n" + prefetch_omit_footer(omitted)
+        footer = prefetch_omit_footer(omitted)
+        overhead = len("\n") + len(footer)
+        if len(text) + overhead > cap:
+            text = text[: max(0, cap - overhead)]
+        text += "\n" + footer
     return text
 
 

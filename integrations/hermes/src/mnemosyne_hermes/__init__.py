@@ -104,8 +104,14 @@ _SLIM_WRITE_TOOLS = frozenset(
         "mnemosyne_shared_forget",
     }
 )
+_DIAGNOSTIC_TOOLS = frozenset(
+    {
+        "mnemosyne_diagnose",
+        "mnemosyne_recall_diagnostics",
+    }
+)
 _MODE_NAME_SETS = {
-    "none": _READ_TOOLS,
+    "none": _READ_TOOLS - _DIAGNOSTIC_TOOLS,
     "slim": _READ_TOOLS | _SLIM_WRITE_TOOLS,
     "full": None,
 }
@@ -308,7 +314,11 @@ def apply_prefetch_char_budget(hits, limit: int = DEFAULT_PREFETCH_CHAR_LIMIT, *
         omitted += 1
     text = joiner.join(kept)
     if omitted:
-        text += "\n" + prefetch_omit_footer(omitted)
+        footer = prefetch_omit_footer(omitted)
+        overhead = len("\n") + len(footer)
+        if len(text) + overhead > cap:
+            text = text[: max(0, cap - overhead)]
+        text += "\n" + footer
     return text
 
 

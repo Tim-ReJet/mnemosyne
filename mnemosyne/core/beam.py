@@ -9182,6 +9182,20 @@ class BeamMemory:
         conflicts_resolved = 0
         model_refresh_proposals = 0
         model_refresh_applied = 0
+        # Trajectory refresh is once per sleep. Per-source inference
+        # would re-send the same session records to the LLM.
+        trajectory_refresh_items = None
+        trajectory_records = getattr(self, "sleep_trajectory_records", None)
+        if trajectory_records:
+            try:
+                from mnemosyne.trajectory import sleep_prompt_items
+
+                traj_items = sleep_prompt_items(trajectory_records)
+                if traj_items:
+                    trajectory_refresh_items = traj_items
+            except Exception:
+                trajectory_refresh_items = None
+        trajectory_refresh_done = False
         for source, items in grouped.items():
             lines = [item["content"] for item in items]
             ids = [item["id"] for item in items]
@@ -9311,18 +9325,19 @@ class BeamMemory:
             if agent_context != "cron":
                 try:
                     from mnemosyne.core import model_refresh
-                    from mnemosyne.trajectory import sleep_prompt_items
 
-                    refresh_items = items
-                    trajectory_records = getattr(self, "sleep_trajectory_records", None)
-                    if trajectory_records:
-                        # Trajectory-first: compact JSON records, not raw tool XML
-                        # and not working-memory transcript dumps. Meta-only is
-                        # not a trajectory — keep working-memory items.
-                        traj_items = sleep_prompt_items(trajectory_records)
-                        if traj_items:
-                            refresh_items = traj_items
-                    proposals = model_refresh.infer_model_update_proposals(refresh_items)
+                    if trajectory_refresh_items is not None:
+                        if trajectory_refresh_done:
+                            proposals = []
+                        else:
+                            # Trajectory-first: compact JSON records, not raw
+                            # tool XML and not working-memory transcript dumps.
+                            proposals = model_refresh.infer_model_update_proposals(
+                                trajectory_refresh_items
+                            )
+                            trajectory_refresh_done = True
+                    else:
+                        proposals = model_refresh.infer_model_update_proposals(items)
                 except Exception:
                     proposals = []
             model_refresh_proposals += len(proposals)

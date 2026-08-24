@@ -282,6 +282,39 @@ def test_sleep_model_refresh_uses_trajectory_not_working_memory_xml(tmp_path, mo
     assert '"type":"user"' in prompt or "List the repo root" in prompt
 
 
+def test_sleep_model_refresh_runs_once_across_sources(tmp_path, monkeypatch):
+    """Trajectory refresh is once per sleep, not once per WM source."""
+    from datetime import datetime, timedelta
+
+    from mnemosyne.core import model_refresh
+    from mnemosyne.core.beam import BeamMemory
+    from mnemosyne.trajectory import from_messages
+
+    db_path = tmp_path / "mnemo.db"
+    beam = BeamMemory(session_id="sleep-once", db_path=db_path)
+    old_ts = (datetime.now() - timedelta(hours=200)).isoformat()
+    for idx, source in enumerate(("conversation", "preference", "insight")):
+        beam.conn.execute(
+            "INSERT INTO working_memory (id, content, source, timestamp, session_id) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (f"wm-{idx}", f"durable note {idx}", source, old_ts, "sleep-once"),
+        )
+    beam.conn.commit()
+    records, _counts = from_messages(FIXTURE_MESSAGES, session_id="sleep-once")
+    beam.sleep_trajectory_records = records
+
+    calls: list[int] = []
+
+    def _infer(items, **_kwargs):
+        calls.append(len(items))
+        return []
+
+    monkeypatch.setattr(model_refresh, "infer_model_update_proposals", _infer)
+    result = beam.sleep(dry_run=False)
+    assert result["status"] == "consolidated"
+    assert len(calls) == 1
+
+
 def test_from_messages_empty_is_meta_only_not_session_trajectory():
     """Empty sessions still emit [meta]; that must not count as a trajectory."""
     from mnemosyne.trajectory import from_messages, has_session_trajectory

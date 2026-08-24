@@ -2,7 +2,7 @@
 
 Modes are data, not scattered conditionals:
 
-* ``none`` — read-only surface (``READ_TOOLS``)
+* ``none`` — read-only surface (``READ_TOOLS - DIAGNOSTIC_TOOLS``)
 * ``slim`` — reads plus everyday writes (``READ_TOOLS | SLIM_WRITE_TOOLS``)
 * ``full`` — every advertised schema (``ALL_TOOL_SCHEMAS``)
 
@@ -46,8 +46,16 @@ SLIM_WRITE_TOOLS: FrozenSet[str] = frozenset(
     }
 )
 
+# diagnose has repair_vec_working; recall_diagnostics has reset=true.
+DIAGNOSTIC_TOOLS: FrozenSet[str] = frozenset(
+    {
+        "mnemosyne_diagnose",
+        "mnemosyne_recall_diagnostics",
+    }
+)
+
 _MODE_NAME_SETS: Dict[str, FrozenSet[str] | None] = {
-    "none": READ_TOOLS,
+    "none": READ_TOOLS - DIAGNOSTIC_TOOLS,
     "slim": READ_TOOLS | SLIM_WRITE_TOOLS,
     "full": None,
 }

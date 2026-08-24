@@ -6,7 +6,7 @@ baseline 6645), and a synthetic 20-hit prefetch p95. Exits 0 when ship_ok is
 true, else 1 so CI can gate.
 
 ship_ok is true iff slim est_tokens <= 0.60 * full est_tokens AND
-prefetch_p95_chars <= prefetch_char_limit + omit footer.
+prefetch_p95_chars <= prefetch_char_limit (footer included).
 """
 
 from __future__ import annotations
@@ -58,25 +58,18 @@ def synthetic_prefetch_p95(limit: int | None = None) -> tuple[int, int]:
     """Assemble 20 synthetic hits and return (p95_chars, cap_chars).
 
     A single 20-hit assembly is the worst-case turn shape; its assembled
-    length is the p95 sample. Cap is ``limit`` when nothing is omitted,
-    otherwise ``limit + newline + footer``.
+    length is the p95 sample. Cap is always ``limit`` — the omit footer is
+    reserved inside that budget.
     """
     _ensure_repo_on_path()
     from hermes_memory_provider import (
         DEFAULT_PREFETCH_CHAR_LIMIT,
         apply_prefetch_char_budget,
-        prefetch_omit_footer,
     )
 
     cap_limit = DEFAULT_PREFETCH_CHAR_LIMIT if limit is None else int(limit)
     block = apply_prefetch_char_budget(_synthetic_hits(), limit=cap_limit)
-    p95 = len(block)
-    if "more hits omitted; call mnemosyne_recall." in block:
-        footer_line = block.splitlines()[-1]
-        cap = cap_limit + len("\n") + len(footer_line)
-    else:
-        cap = cap_limit + len("\n") + len(prefetch_omit_footer(1))
-    return p95, cap
+    return len(block), cap_limit
 
 
 def measure() -> dict:

@@ -4,7 +4,7 @@
 
 # Mnemosyne for Hermes Agent
 
-*Local-first memory provider for Hermes Agent. Tool surface full 40 / slim 21 / none 14. Zero cloud. Zero latency.*
+*Local-first memory provider for Hermes Agent. Tool surface full 40 / slim 21 / none 12. Zero cloud. Zero latency.*
 
 [![PyPI](https://img.shields.io/pypi/v/mnemosyne-hermes.svg)](https://pypi.org/project/mnemosyne-hermes/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
@@ -259,7 +259,7 @@ memory:
 
 ## Tools
 
-Named tool surface: **full 40** (library default, upstream-safe) / **slim 21** / **none 14**. An explicit `tools:` list — including `[]` — wins over the mode. Slim is opt-in via `hermes config set memory.mnemosyne.interactive_writes slim`; restart required; do not flip mid-session. The library default stays `full`. Operator details (prefetch 3000 + footer, sleep aux resolution, ship gate) live in [`hermes_memory_provider/README.md`](../../hermes_memory_provider/README.md).
+Named tool surface: **full 40** (library default, upstream-safe) / **slim 21** / **none 12**. An explicit `tools:` list — including `[]` — wins over the mode. Slim is opt-in via `hermes config set memory.mnemosyne.interactive_writes slim`; restart required; do not flip mid-session. The library default stays `full`. Operator details (prefetch 3000 + footer, sleep aux resolution, ship gate) live in [`hermes_memory_provider/README.md`](../../hermes_memory_provider/README.md).
 
 Everyday auto-injected surface is the **slim 21**:
 
