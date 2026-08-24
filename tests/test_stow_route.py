@@ -5,9 +5,13 @@ from __future__ import annotations
 import pytest
 
 from hermes_memory_provider.stow_route import (
+    bind_write_id,
     classify,
     decide_write,
+    mutation_metadata,
+    plan_mutation,
     route,
+    sleep_mutations,
 )
 
 
@@ -79,3 +83,71 @@ def test_inspect_then_update_creates_when_unrelated():
 def test_unknown_kind_fails_loudly():
     with pytest.raises(ValueError, match="Unknown stow kind"):
         classify("vibes", "something durable")
+
+
+def test_create_requires_evidence():
+    decision = decide_write("User prefers conventional commits.", [])
+    with pytest.raises(ValueError, match="requires evidence"):
+        plan_mutation(decision, new_body="User prefers conventional commits.", evidence="")
+
+
+def test_create_binds_invalidate_id():
+    decision = decide_write("User prefers conventional commits.", [])
+    planned = plan_mutation(
+        decision,
+        new_body="User prefers conventional commits.",
+        evidence="Tim: use conventional commits",
+    )
+    assert planned.rollback == "invalidate"
+    assert planned.rollback_id is None
+    bound = bind_write_id(planned, "wm-9")
+    assert bound.rollback_id == "wm-9"
+    meta = mutation_metadata(bound)
+    assert meta["evidence"] == "Tim: use conventional commits"
+    assert meta["rollback_id"] == "wm-9"
+
+
+def test_update_carries_before_and_restore_id():
+    existing = [{"id": "wm-1", "body": "User prefers python, not pip."}]
+    decision = decide_write(
+        "User prefers python, not pip. Prefer uv run over pip.",
+        existing,
+    )
+    planned = plan_mutation(
+        decision,
+        new_body="User prefers python, not pip. Prefer uv run over pip.",
+        evidence="Tim: uv run, not pip",
+        existing=existing,
+    )
+    assert planned.action == "update"
+    assert planned.rollback == "restore"
+    assert planned.rollback_id == "wm-1"
+    assert planned.before == "User prefers python, not pip."
+    assert mutation_metadata(planned)["before"] == planned.before
+
+
+def test_skip_does_not_require_evidence():
+    existing = [{"id": "wm-1", "content": "User prefers uv run."}]
+    decision = decide_write("  User   prefers uv run. ", existing)
+    planned = plan_mutation(decision, new_body="User prefers uv run.", evidence="")
+    assert planned.action == "skip_duplicate"
+    assert planned.rollback == "none"
+    assert planned.rollback_id is None
+
+
+def test_sleep_no_op_has_no_mutations():
+    assert sleep_mutations({"status": "no_op", "message": "nothing"}) == []
+    assert sleep_mutations({"status": "dry_run", "consolidated_ids": ["wm-1"]}) == []
+
+
+def test_sleep_claims_are_reclaimable():
+    mutations = sleep_mutations(
+        {
+            "status": "consolidated",
+            "summaries_created": 1,
+            "consolidated_ids": ["wm-1", "wm-2"],
+        }
+    )
+    assert [m.rollback_id for m in mutations] == ["wm-1", "wm-2"]
+    assert {m.rollback for m in mutations} == {"reclaim"}
+    assert mutations[0].evidence.startswith("sleep consolidated")
